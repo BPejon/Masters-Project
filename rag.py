@@ -1,73 +1,64 @@
 import getpass
 import os
+import openai
 from langchain_openai import ChatOpenAI
-from langchain_core.messages import SystemMessage, HumanMessage
-from langchain_community.document_loaders import PyPDFLoader
-from langchain_text_splitters import CharacterTextSplitter
 
-from langchain_community.document_loaders import DirectoryLoader
-
-from langchain_community.vectorstores import Chroma
-
-DATA_PATH = "./pdfs"
-def load_documents():
-    loader = DirectoryLoader(DATA_PATH, glob="*.pdf")
-    documents = loader.load()
-    return documents
-
-
-
-## Load Documents ##
-
-file_path = ( "./pdfs/2.pdf")
-loader = PyPDFLoader(file_path, extract_images=True)
-docs = []
-docs_lazy = loader.load()
-
-for doc in docs_lazy:
-    docs.append(doc)
-
-# print(docs[1].page_content)
-# print(docs[1].metadata)
-
-##Split
-
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-
-text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200, length_function = len, add_start_index = True)
-all_splits = text_splitter.split_documents(docs)
-
-chunks = text_splitter.split_documents(docs)
-
-print(chunks)
-
-##Embed
 
 from langchain_openai import OpenAIEmbeddings
+from langchain_chroma import Chroma
+from createDb import generate_data_store
+from langchain.prompts import ChatPromptTemplate
 
-embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
+CHROMA_PATH = "./chroma"
 
-#Store
+def main():
+## Load Documents, Split, Store, embed
+    generate_data_store()
+    #Retrieve 
+    EMBEDDING_FUNCTION = OpenAIEmbeddings(model = "text-embedding-3-large")
+    db = Chroma(persist_directory=CHROMA_PATH, embedding_function=EMBEDDING_FUNCTION)
 
-CHROMA_PATH = "chroma"
+    query_text = "What is Langmuir Blodgett Assembly?"
 
-from langchain_core.vectorstores import InMemoryVectorStore
+    #Documento e sua relevancia
+    #List[Tuple[Document,float]]
+    results = db.similarity_search_with_relevance_scores(query_text, k=3)
 
-vector_store = InMemoryVectorStore(embeddings)
+    if len(results) == 0:
+        print(f"Unable to find matching results.")
+        return 
 
-#remover se já existe
-if os.path.exists(CHROMA_PATH):
-    shutil.rmtree(CHROMA_PATH)
+    print(f"Similaridade dos 3 primeiros: {results[0][1]} - {results[1][1]} - {results[2][1]}")
+    context_text = "\n\n---\n\n".join([doc.page_content for doc, _score in results])
+    # print(context_text)
 
-db = Chroma.from_documents(chunks, OpenAIEmbeddings(), persist_directory = CHROMA_PATH)
-#Retrieve 
+    #Generate
+    PROMPT_TEMPLATE = """
+    Answer the question based only on the following context:
+    {context}
 
-#Generate
+    ---
 
-# if not os.environ.get("OPEN_API_KEY"):
-#     os.environ["OPEN_API_KEY"] = getpass.getpass("Enter API key for OpenAI: ")
+    Do not use previous trained data.
+    If the information is not suficient, say so.
+    
+    Answer this question: {question} 
+    """
+
+    prompt_template = ChatPromptTemplate.from_template(PROMPT_TEMPLATE)
+    prompt = prompt_template.format(context = context_text, question = query_text)
+    print(prompt)
+
+    if not os.environ.get("OPEN_API_KEY"):
+        os.environ["OPEN_API_KEY"] = getpass.getpass("Enter API key for OpenAI: ")
 
 
-# model = ChatOpenAI(model="gpt-4o-mini")
+    model = ChatOpenAI(model="gpt-3.5-turbo")
+    response_text = model.predict(prompt)
 
-# print(model.invoke("Hello, World"))
+    sources = [doc.metadata.get("source", None) for doc, _score in results]
+    formatted_response = f"Response {response_text}\nSources: {sources}"
+    print(formatted_response)
+
+if __name__ == "__main__":
+    main()

@@ -1,4 +1,3 @@
-from langchain_community.document_loaders import DirectoryLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.schema import Document
 # from langchain.embeddings import OpenAIEmbeddings
@@ -8,11 +7,12 @@ import openai
 from dotenv import load_dotenv
 import os
 import shutil
+from langchain_community.document_loaders import PyPDFDirectoryLoader
 
 load_dotenv()
 
 openai.api_key = os.environ['OPENAI_API_KEY']
-
+EMBEDDING_FUNCTION = OpenAIEmbeddings(model="text-embedding-3-large")
 CHROMA_PATH = "chroma"
 DATA_PATH = "pdfs"
 
@@ -22,31 +22,34 @@ def main():
 
 def generate_data_store():
     documents = load_documents()
-    chunks = split_text(documents)
+    chunks = split_documents(documents)
     save_to_chroma(chunks)
 
 
 def load_documents():
-    loader = DirectoryLoader(DATA_PATH, glob="*.pdf")
+    loader = PyPDFDirectoryLoader(DATA_PATH)
     documents = loader.load()
+    print(documents)
+    print("------")
     return documents
 
-def split_text(docs: list[Document]):
+def split_documents(docs: list[Document]):
     text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size = 1000,
+        chunk_size = 4000,
         chunk_overlap = 200,
         length_function = len,
         add_start_index = True,
     )
 
+    chunks = text_splitter.split_documents(docs)
+
     print(f"Split {len(docs)} documents into {len(chunks)} chunks")
 
-    doc = chunks[10]
+    # doc = chunks[10]
 
-    print("Document content: ",doc.page_content)
-    print("Document metadata : ", doc.metadata)
+    # print("Document content: ",doc.page_content)
+    # print("Document metadata : ", doc.metadata)
 
-    chunks = text_splitter.split_documents(docs)
     return chunks
 
 
@@ -57,9 +60,8 @@ def save_to_chroma(chunks):
 
     #Create db from docs
     db = Chroma.from_documents(
-        chunks, OpenAIEmbeddings(), persist_directory= CHROMA_PATH
+        chunks,embedding= EMBEDDING_FUNCTION, persist_directory= CHROMA_PATH
     )
-    db.persist()
     print(f"Saved {len(chunks)} chunks to {CHROMA_PATH}")
 
 
