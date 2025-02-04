@@ -29,8 +29,6 @@ def generate_data_store():
 def load_documents():
     loader = PyPDFDirectoryLoader(DATA_PATH)
     documents = loader.load()
-    print(documents)
-    print("------")
     return documents
 
 def split_documents(docs: list[Document]):
