@@ -3,7 +3,6 @@ import os
 import openai
 from langchain_openai import ChatOpenAI
 
-
 from langchain_openai import OpenAIEmbeddings
 from langchain_chroma import Chroma
 from createDb import generate_data_store
