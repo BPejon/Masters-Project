@@ -1,0 +1,10 @@
+Bibliotecas usadas:
+Quero fazer um make file das bibliotecas instaladas para executar o projeto.
+Eu tinha visto um que instalava a biblioteca apenas na pasta do código. Pesquisar como fazer isso.
+pegar versão utilizadas tmb
+Pesquisar como criar um makefile para funcionar em windows/linux
+No windows era .\ai\script\Algumacoisa.ps1
+streamlit
+langchain
+ollama
+chromadb
