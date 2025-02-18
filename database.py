@@ -1,15 +1,17 @@
-import chromadb
 from langchain_core.documents import Document
-import streamlit as st
 from chromadb.utils.embedding_functions.ollama_embedding_function import OllamaEmbeddingFunction
-import tempfile
 from streamlit.runtime.uploaded_file_manager import UploadedFile
-from typing import List
 from langchain_community.document_loaders import PyMuPDFLoader
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 import os
+import chromadb
+from typing import List
+import tempfile
+import streamlit as st
+import shutil
 
-
+CHROMA_PATH = "./demo-rag-chroma"
+COLLECTION_NAME = "rag_app"
 def add_to_vector_collection(all_splits:list[Document], filename: str):
     collection = get_vector_collection()
     documents, metadatas, ids = [],[],[]
@@ -34,9 +36,9 @@ def get_vector_collection() -> chromadb.Collection:
         model_name="nomic-embed-text:latest",
     )
 
-    chroma_client = chromadb.PersistentClient(path="./demo-rag-chroma")
+    chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
     return chroma_client.get_or_create_collection(
-        name="rag_app",
+        name= COLLECTION_NAME,
         embedding_function= ollama_ef,
         metadata= {"hnsw:space": "cosine"}, #Calculo de similaridade
     )
@@ -62,3 +64,18 @@ def query_collection(prompt:str, n_results: int = 5):
     results = collection.query(query_texts=[prompt], n_results= n_results)
 
     return results
+
+def reset_database():
+    try:
+        chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
+        chroma_client.delete_collection(name= COLLECTION_NAME)
+
+        if os.path.exists(CHROMA_PATH):
+            shutil.rmtree(CHROMA_PATH)
+            st.success("DB deleted")
+    #Ele apaga a collection, porém os embeddings se mantem na bd. Porém não é utilizada para conteúdo.
+    #chroma_client.reset()
+    #ValueError: Resetting is not allowed by this configuration (to enable it, set `allow_reset` to `True` in your Settings() or include `ALLOW_RESET=TRUE` in your environment variables)
+    except Exception as e:
+        st.error(f"Error. Database does not exist")
+    

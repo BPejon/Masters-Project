@@ -1,10 +1,5 @@
 import streamlit as st
 
-from langchain_core.documents import Document
-from langchain_text_splitters import RecursiveCharacterTextSplitter
-from streamlit.runtime.uploaded_file_manager import UploadedFile
-from langchain_community.document_loaders import PyMuPDFLoader
-
 from chromadb.utils.embedding_functions.ollama_embedding_function import OllamaEmbeddingFunction
 import ollama
 import database
@@ -77,6 +72,11 @@ def sidebar():
                     )
                     all_splits = database.process_document(doc)
                     database.add_to_vector_collection(all_splits, normalize_uploaded_file_name)
+
+        db_get = st.button("Reset Database")
+
+        if db_get:
+            database.reset_database()
 def main():
 
     sidebar()

@@ -8,3 +8,20 @@ streamlit
 langchain
 ollama
 chromadb
+
+pra instalar as libs todas de uma vez:
+use o comando
+pip install -r requirements.txt
+
+nesse arquivo de texto temos que colocar o nome das libs que iremos utilizar(talvez versão tmb?)
+
+AMBIENTE VIRUTAL
+
+para criar um ambiente virtual:
+
+python3 -m env caminho/da/pasta/
+
+source caminho/da/pasta/bin/activate
+
+pra sair
+deactivate
