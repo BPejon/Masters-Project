@@ -89,17 +89,16 @@ def get_document_names() -> list[str]:
 
         results = collection.get(include=["metadatas"])
         metadatas = results["metadatas"]
-        print(f"Metadatas= {metadatas}")
-
 
         #Extract unique doc inside bd
         document_names = set()
         for num, metadata in enumerate(metadatas):
-            print(f"Metadata {num} = {metadata}")
             if metadata and "document_name" in metadata:
-                print(f"Doc name = {document_names}")
                 document_names.add(metadata["document_name"])
 
         return list(document_names)
     except:
         st.write("")
+
+def remove_document_from_db(filename:str):
+    return

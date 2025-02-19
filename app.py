@@ -63,7 +63,6 @@ def delete_db_button():
 def display_list_of_documents():
     st.subheader("Documents available")
     documents_names = database.get_document_names()
-    print(documents_names)
     if documents_names:
         for doc_name in documents_names:
             st.write(doc_name)
