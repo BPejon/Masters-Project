@@ -1,8 +1,8 @@
 import streamlit as st
 
-from chromadb.utils.embedding_functions.ollama_embedding_function import OllamaEmbeddingFunction
 import ollama
 import database
+from sidebar import sidebar
 
 SYSTEM_PROMPT = """
 You are an AI assistant tasked with providing detailed answers based solely on the given context. Your goal is to analyze the information provided and formulate a comprehensive, well-structured response to the question.
@@ -53,48 +53,9 @@ def call_llm(context: str, prompt:str):
         else:
             break
 
-def delete_db_button():
-        db_get = st.button("Reset Database")
-
-        if db_get:
-            database.reset_database()
-
-
-def display_list_of_documents():
-    st.subheader("Documents available")
-    documents_names = database.get_document_names()
-    if documents_names:
-        for doc_name in documents_names:
-            st.write(doc_name)
-
-
-def sidebar():
-
-    with st.sidebar:
-        st.set_page_config(page_title="RAG Question Answer")
-        st.header("Rag Question Answer")
-        uploaded_file= st.file_uploader("Upload PDF File for QnA", type=["pdf"], accept_multiple_files=True)
-
-        process = st.button(
-            "Process"
-        )
-
-        if uploaded_file and process:
-            with st.spinner("Inserting the documents in the database...", show_time = True):
-                for doc in uploaded_file:
-                    normalize_uploaded_file_name = doc.name.translate(
-                        str.maketrans({"-":"_", ".": "_", " ":"_"})
-                    )
-                    all_splits = database.process_document(doc)
-                    database.add_to_vector_collection(all_splits, normalize_uploaded_file_name, doc.name)
-
-        display_list_of_documents()
-        delete_db_button()
-
 def main():
 
     sidebar()
-
 
     st.header("RAG Question Answer")
 
