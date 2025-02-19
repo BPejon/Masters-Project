@@ -53,6 +53,22 @@ def call_llm(context: str, prompt:str):
         else:
             break
 
+def delete_db_button():
+        db_get = st.button("Reset Database")
+
+        if db_get:
+            database.reset_database()
+
+
+def display_list_of_documents():
+    st.subheader("Documents available")
+    documents_names = database.get_document_names()
+    print(documents_names)
+    if documents_names:
+        for doc_name in documents_names:
+            st.write(doc_name)
+
+
 def sidebar():
 
     with st.sidebar:
@@ -71,12 +87,11 @@ def sidebar():
                         str.maketrans({"-":"_", ".": "_", " ":"_"})
                     )
                     all_splits = database.process_document(doc)
-                    database.add_to_vector_collection(all_splits, normalize_uploaded_file_name)
+                    database.add_to_vector_collection(all_splits, normalize_uploaded_file_name, doc.name)
 
-        db_get = st.button("Reset Database")
+        display_list_of_documents()
+        delete_db_button()
 
-        if db_get:
-            database.reset_database()
 def main():
 
     sidebar()

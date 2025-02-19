@@ -12,14 +12,16 @@ import shutil
 
 CHROMA_PATH = "./demo-rag-chroma"
 COLLECTION_NAME = "rag_app"
-def add_to_vector_collection(all_splits:list[Document], filename: str):
+def add_to_vector_collection(all_splits:list[Document], filename: str, original_filename:str):
     collection = get_vector_collection()
     documents, metadatas, ids = [],[],[]
 
     for idx, split in enumerate(all_splits):
         documents.append(split.page_content)
-        metadatas.append(split.metadata)
         ids.append(f"{filename}_{idx}")
+        metadata = split.metadata
+        metadata["document_name"] = original_filename
+        metadatas.append(metadata)
 
     collection.upsert(
         documents= documents,
@@ -65,10 +67,12 @@ def query_collection(prompt:str, n_results: int = 5):
 
     return results
 
+# Ele ta bugando, quando eu apago a base de dados e tento inserir um novo aquivo ele simplesmente n adiciona:
+#ValueError: Could not connect to tenant default_tenant. Are you sure it exists?
 def reset_database():
     try:
-        chroma_client = chromadb.PersistentClient(path=CHROMA_PATH)
-        chroma_client.delete_collection(name= COLLECTION_NAME)
+        # chroma_client = get_vector_collection()
+        # chroma_client.delete_collection(name= COLLECTION_NAME)
 
         if os.path.exists(CHROMA_PATH):
             shutil.rmtree(CHROMA_PATH)
@@ -77,5 +81,25 @@ def reset_database():
     #chroma_client.reset()
     #ValueError: Resetting is not allowed by this configuration (to enable it, set `allow_reset` to `True` in your Settings() or include `ALLOW_RESET=TRUE` in your environment variables)
     except Exception as e:
-        st.error(f"Error. Database does not exist")
+        st.error(e)
     
+def get_document_names() -> list[str]:
+    try:
+        collection = get_vector_collection()
+
+        results = collection.get(include=["metadatas"])
+        metadatas = results["metadatas"]
+        print(f"Metadatas= {metadatas}")
+
+
+        #Extract unique doc inside bd
+        document_names = set()
+        for num, metadata in enumerate(metadatas):
+            print(f"Metadata {num} = {metadata}")
+            if metadata and "document_name" in metadata:
+                print(f"Doc name = {document_names}")
+                document_names.add(metadata["document_name"])
+
+        return list(document_names)
+    except:
+        st.write("")
