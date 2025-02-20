@@ -54,7 +54,6 @@ def call_llm(context: str, prompt:str):
             break
 
 def main():
-
     sidebar()
 
     st.header("RAG Question Answer")
@@ -65,7 +64,6 @@ def main():
     if ask and prompt:
         with st.spinner("Looking for answers...", show_time= True):
             most_similar_docs = database.query_collection(prompt)
-            #st.write(most_similar_docs)
             query_embed = database.query_collection(prompt)
             context = query_embed.get("documents")[0]
             response = call_llm(most_similar_docs.items, context)

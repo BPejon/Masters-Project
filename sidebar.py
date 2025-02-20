@@ -21,15 +21,20 @@ def display_list_of_documents():
             with col_doc_include:
                 toggle_state = st.checkbox("Toggle", key=f"toggle_{doc_name}")
             with col_del_button:
-                delete_doc_button = st.button("X")
+                delete_doc_button = st.button("X", key=f"delete_{doc_name}" )
                 if delete_doc_button:
                     with st.spinner(f"Deleting {doc_name}"):
-                        database.remove_document_from_db(doc_name)
-                st.rerun()
+                        is_success = database.remove_document_from_db(doc_name)
+                        if is_success:
+                            st.toast(f"Document '{doc_name}' deleted successfully!")
+
+
 
 def sidebar():
 
+
     with st.sidebar:
+
         st.set_page_config(page_title="RAG Question Answer")
         st.header("Rag Question Answer")
         uploaded_file= st.file_uploader("Upload PDF File for QnA", type=["pdf"], accept_multiple_files=True)
@@ -48,5 +53,4 @@ def sidebar():
                     database.add_to_vector_collection(all_splits, normalize_uploaded_file_name, doc.name)
 
         display_list_of_documents()
-        delete_db_button()
 

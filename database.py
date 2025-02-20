@@ -101,4 +101,14 @@ def get_document_names() -> list[str]:
         st.write("")
 
 def remove_document_from_db(filename:str):
-    return
+    try:   
+        collection= get_vector_collection()
+
+        collection.delete(where={"document_name": filename})
+        return True
+    
+    except Exception as e:
+        st.write(e)
+        return False
+
+    
