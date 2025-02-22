@@ -27,7 +27,6 @@ def display_list_of_documents():
                         is_success = database.remove_document_from_db(doc_name)
                         if is_success:
                             st.toast(f"Document '{doc_name}' deleted successfully!")
-                            st.session_state.deleted = True
 
 
 
@@ -54,7 +53,4 @@ def sidebar():
                     database.add_to_vector_collection(all_splits, normalize_uploaded_file_name, doc.name)
 
         display_list_of_documents()
-
-        if "deleted" in st.session_state and st.session_state["deleted"]:
-            st.session_state.deleted = False
 

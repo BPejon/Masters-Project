@@ -56,37 +56,18 @@ def call_llm(context: str, prompt:str):
 def main():
     sidebar()
 
-    if "prompt" not in st.session_state:
-        st.session_state.prompt = ""
-    if "ask" not in st.session_state:
-        st.session_state.ask= False
-
     st.header("RAG Question Answer")
 
-    prompt = st.text_area(" Ask a question related to your document: ", value = st.session_state.prompt)
+    prompt = st.text_area(" Ask a question related to your document: ")
     ask = st.button("Ask")
 
-    if ask: 
-        st.session_state.prompt = prompt
-        st.session_state.ask = True
-
-    print("sesssion prompt: ", st.session_state.prompt)
-    print("session state ask: ", st.session_state.ask)
-
-    
-    if st.session_state.ask and st.session_state.prompt:
+    if ask and prompt:
         with st.spinner("Looking for answers...", show_time= True):
             most_similar_docs = database.query_collection(prompt)
             query_embed = database.query_collection(prompt)
             context = query_embed.get("documents")[0]
             response = call_llm(most_similar_docs.items, context)
-
-            if "llm_answer" not in st.session_state:
-                st.session_state.llm_answer = ""
-
             st.write_stream(response)
-            
-            st.session_state.llm_answer = response
         
             with st.expander("See retrivied documents"):
                 st.write(most_similar_docs)
