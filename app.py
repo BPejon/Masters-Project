@@ -63,8 +63,13 @@ def main():
 
     if ask and prompt:
         with st.spinner("Looking for answers...", show_time= True):
-            most_similar_docs = database.query_collection(prompt)
-            query_embed = database.query_collection(prompt)
+            
+            excluded_docs= [
+                doc_name for doc_name in database.get_document_names()
+                if f"toggle_{doc_name}" in st.session_state and not st.session_state[f"toggle_{doc_name}"]
+            ]
+            most_similar_docs = database.query_collection(prompt, exclude_docs=excluded_docs)
+            query_embed = database.query_collection(prompt) #N sei se é o melhor método pra fazer embedding do prompt
             context = query_embed.get("documents")[0]
             response = call_llm(most_similar_docs.items, context)
             st.write_stream(response)
