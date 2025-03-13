@@ -53,4 +53,5 @@ python-env-tools/**
 python_files/tests/*/.data/.coverage*
 python_files/tests/*/.data/*/.coverage*
 src/testTestingRootWkspc/coverageWorkspace/.coverage
-demo-rag-chroma
+demo-rag-chroma/
+proj/

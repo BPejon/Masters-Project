@@ -29,8 +29,11 @@ Important: Base your entire response solely on the information provided in the c
 
 
 def call_llm(context: str, prompt:str):
+    #LLM_MODEL = "llama3.2:3b"
+    LLM_MODEL = "deepseek-r1"
+
     response = ollama.chat(
-        model= "llama3.2:3b",
+        model= LLM_MODEL,
         stream = True,
         messages = [
             {
