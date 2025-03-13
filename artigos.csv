@@ -106,4 +106,39 @@ Locality-preserving dimensionality reduction and classification for hyperspectra
 Dimensionality reduction on anchorgraph with an efficient locality preserving projection;https://www.sciencedirect.com/science/article/pii/S0925231215018536
 A supervised locality preserving projection algorithm for dimensionality reduction;None
 On some variants of locality preserving projection;https://www.sciencedirect.com/science/article/pii/S0925231215012680
-Fuzzy parameterized fuzzy soft sets and decision making;https://link.springer.com/article/10.1007/s13042-015-0449-z
+New PCA feature compression algorithm based on information theory;None
+Information feature analysis and selection of orthogonal transformation;None
+Facial feature extraction using a cascade of model-based algorithms;https://ieeexplore.ieee.org/abstract/document/1577293/
+An effective and fast iris recognition system based on a combined multiscale feature extraction technique;https://www.sciencedirect.com/science/article/pii/S0031320307003068
+Generalized linear discriminant analysis: a unified framework and efficient model selection;https://ieeexplore.ieee.org/abstract/document/4633689/
+Regression shrinkage and selection via the lasso;https://academic.oup.com/jrsssb/article-abstract/58/1/267/7027929
+Sensitivity analysis of k-fold cross validation in prediction error estimation;https://ieeexplore.ieee.org/abstract/document/5342427/
+Lasso meets horseshoe: A survey;https://arxiv.org/abs/1706.10179
+Discovery and replication of gene influences on brain structure using LASSO regression;https://www.frontiersin.org/articles/10.3389/fnins.2012.00115/full
+A new LDA-based face recognition system which can solve the small sample size problem;https://www.sciencedirect.com/science/article/pii/S0031320399001399
+A margin based feature extraction algorithm for the small sample size problem;None
+Learning from very few samples: A survey;None
+Generalizing from a few examples: A survey on few-shot learning;https://dl.acm.org/doi/abs/10.1145/3386252
+Learning a kernel function for classification with small training samples;https://dl.acm.org/doi/abs/10.1145/1143844.1143895
+A novel approach for dimension reduction of microarray;https://www.sciencedirect.com/science/article/pii/S147692711630411X
+Artificial neural network classification of microarray data using new hybrid gene selection method;https://www.inderscienceonline.com/doi/abs/10.1504/IJDMB.2017.084026
+Reducing the dimensionality of data with neural networks;https://www.science.org/doi/abs/10.1126/science.1127647
+A fast learning algorithm for deep belief nets;https://direct.mit.edu/neco/article-abstract/18/7/1527/7065
+Deep machine learning-a new frontier in artificial intelligence research [research frontier];https://ieeexplore.ieee.org/abstract/document/5605630/
+Deep learning face representation by joint identification-verification;https://proceedings.neurips.cc/paper/2014/hash/e5e63da79fcd2bebbd7cb8bf1c1d0274-Abstract.html
+Learning structured sparsity in deep neural networks;https://proceedings.neurips.cc/paper_files/paper/2016/hash/41bfd20a38bb1b0bec75acf0845530a7-Abstract.html
+Deeplearning: Yesterday, today, andtomorrow;None
+Deep convolution neural network for image recognition;https://www.sciencedirect.com/science/article/pii/S1574954118302140
+Review of deep convolution neural network in image classification;https://ieeexplore.ieee.org/abstract/document/8253139/
+Application of deep convolution neural network;https://ieeexplore.ieee.org/abstract/document/8301485/
+Deep residual learning for image recognition;http://openaccess.thecvf.com/content_cvpr_2016/html/He_Deep_Residual_Learning_CVPR_2016_paper.html
+Faster r-cnn: Towards real-time object detection with region proposal networks;https://proceedings.neurips.cc/paper/2015/hash/14bfa6bb14875e45bba028a21ed38046-Abstract.html
+Mask r-cnn;http://openaccess.thecvf.com/content_iccv_2017/html/He_Mask_R-CNN_ICCV_2017_paper.html
+Multi-scale context aggregation by dilated convolutions;https://arxiv.org/abs/1511.07122
+Context-aware block net for small object detection;https://ieeexplore.ieee.org/abstract/document/9151360/
+DCSR: Dilated convolutions for single image super-resolution;https://ieeexplore.ieee.org/abstract/document/8502129/
+Recurrent neural network regularization;https://arxiv.org/abs/1409.2329
+A critical review of recurrent neural networks for sequence learning;https://arxiv.org/abs/1506.00019
+An empirical exploration of recurrent network architectures;https://proceedings.mlr.press/v37/jozefowicz15.html
+A review of recurrent neural networks: LSTM cells and network architectures;https://direct.mit.edu/neco/article-abstract/31/7/1235/8500
+A clockwork rnn;http://proceedings.mlr.press/v32/koutnik14.html
