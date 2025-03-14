@@ -192,4 +192,4 @@ def buscar_link(artigo):
 for artigo in artigos:
     
     buscar_link(artigo)
-    time.sleep(1)
+    time.sleep(60)

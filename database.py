@@ -61,7 +61,7 @@ def process_document(uploaded_file: UploadedFile) -> List[Document]:
 
     return text_splitter.split_documents(docs)
 
-def query_collection(prompt:str, n_results: int = 5, exclude_docs:list[str] = None):
+def query_collection(prompt:str, n_results: int = 15, exclude_docs:list[str] = None):
     collection = get_vector_collection()
 
     query_params ={
