@@ -25,9 +25,9 @@ def display_list_of_documents():
                 st.checkbox("Included in search", key=f"toggle_{doc_name}")
 
 
-                print(f"session: toogle{doc_name}")
-                print(st.session_state[f"toggle_{doc_name}"])
-                print(f"st session: {st.session_state}")
+                # print(f"session: toogle{doc_name}")
+                # print(st.session_state[f"toggle_{doc_name}"])
+                # print(f"st session: {st.session_state}")
 
             with col_del_button:
                 delete_doc_button = st.button("X", key=f"delete_{doc_name}" )

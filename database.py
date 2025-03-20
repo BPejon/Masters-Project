@@ -61,18 +61,44 @@ def process_document(uploaded_file: UploadedFile) -> List[Document]:
 
     return text_splitter.split_documents(docs)
 
-def query_collection(prompt:str, n_results: int = 15, exclude_docs:list[str] = None):
+def query_collection(prompt:str, n_results: int =60 , exclude_docs:list[str] = None, max_embeddings_per_doc: int = 5):
     collection = get_vector_collection()
+    CONTROL_NUMBER = 20
 
     query_params ={
         "query_texts" :[prompt],
-        "n_results": n_results,
+        "n_results": n_results + CONTROL_NUMBER,
     }
 
     if exclude_docs:
         query_params["where"] = {"document_name": {"$nin": exclude_docs}}
 
     results = collection.query(**query_params)
+    print("--------")
+    filtered_documents = []
+    filtered_ids = []
+    doc_count = {}
+
+    print(f"Results: {results}")
+
+    for doc, metadata,doc_id in zip(results["documents"][0], results["metadatas"][0], results["ids"][0]):
+        doc_name = metadata["document_name"]
+        if doc_name not in doc_count:
+            doc_count[doc_name] = 0
+
+        if doc_count[doc_name] < max_embeddings_per_doc:
+            filtered_documents.append(doc)
+            filtered_ids.append(doc_id)
+            print("++++++++++++++++++")
+            print(f"filtered_documents: {filtered_documents}/ filtered_ids {filtered_ids}  ")
+            print("++++++++++++++++++")
+            doc_count[doc_name] += 1
+
+        if len(filtered_documents) >= n_results:
+            break
+
+    results["documents"] = [filtered_documents]
+    results["ids"] = [filtered_ids]
 
     return results
 
