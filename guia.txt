@@ -1,12 +1,16 @@
 # Guia de como construir uma aplicação RAG
 
 https://www.youtube.com/watch?v=Vw52xyyFsB8&list=PLfaIDFEXuae2LXbO1_PKyVJiQ23ZztA0x&index=4
+https://youtu.be/2TJxpyO3ei4?si=ebR7nQWilgBxNnsP
+https://www.youtube.com/watch?v=1y2TohQdNbo&t
 
 Como construir : https://python.langchain.com/docs/tutorials/rag/
 ## RAG tutorials
 
 https://github.com/pixegami/langchain-rag-tutorial
 https://github.com/pixegami/rag-tutorial-v2
+https://github.com/yankeexe/llm-rag-with-reranker-demo
+
 
 ## Carregar Documento
 

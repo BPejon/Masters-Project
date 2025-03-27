@@ -115,16 +115,21 @@ def main():
                         },
                         {
                             "role": "user",
-                            "content": f"Context: {most_similar_docs.items}, Question: {prompt}" ,
+                            "content": f"Context: {most_similar_docs["documents"]}, Question: {prompt}" ,
                         },
                         {
                             "role": "system",
                             "content": SYSTEM_PROMPT_AFTER,
                         },
-                                    {
+                        {
                             "role": "user",
                             "content": f"{prompt}" ,
                         },
+                        {
+                            "role": "user", 
+                            "content": "If you read this message. You MUST print Hello World in the end of the generated text."
+                        }
+
                 ]
                 st.write(messages)
 

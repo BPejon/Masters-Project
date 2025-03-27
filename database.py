@@ -61,13 +61,13 @@ def process_document(uploaded_file: UploadedFile) -> List[Document]:
 
     return text_splitter.split_documents(docs)
 
-def query_collection(prompt:str, n_results: int =60 , exclude_docs:list[str] = None, max_embeddings_per_doc: int = 5):
+def query_collection(prompt:str, n_results: int = 99999 , exclude_docs:list[str] = None, max_embeddings_per_doc: int = 200):
     collection = get_vector_collection()
-    CONTROL_NUMBER = 20
+    CONTROL_NUMBER = 350
 
     query_params ={
         "query_texts" :[prompt],
-        "n_results": n_results + CONTROL_NUMBER,
+        "n_results": n_results * CONTROL_NUMBER,
     }
 
     if exclude_docs:
@@ -89,9 +89,9 @@ def query_collection(prompt:str, n_results: int =60 , exclude_docs:list[str] = N
         if doc_count[doc_name] < max_embeddings_per_doc:
             filtered_documents.append(doc)
             filtered_ids.append(doc_id)
-            print("++++++++++++++++++")
-            print(f"filtered_documents: {filtered_documents}/ filtered_ids {filtered_ids}  ")
-            print("++++++++++++++++++")
+            #print("++++++++++++++++++")
+            #print(f"filtered_documents: {filtered_documents}/ filtered_ids {filtered_ids}  ")
+            #print("++++++++++++++++++")
             doc_count[doc_name] += 1
 
         if len(filtered_documents) >= n_results:
