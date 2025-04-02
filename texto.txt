@@ -1,7 +1,0 @@
-On the mean accuracy of statistical pattern recognizers;https://ieeexplore.ieee.org/abstract/document/1054102/
-Abdullah Mueen Encyclopedia of Machine Learning, Chapter Curse of Dimensionality;None
-Information leverage in interconnected ecosystems: Overcoming the curse of dimensionality;https://www.science.org/doi/abs/10.1126/science.aag0863
-A survey on feature extraction for pattern recognition;https://link.springer.com/article/10.1007/s10462-011-9225-y
-Dimensionality reduction for large-scale neural recordings;https://www.nature.com/articles/nn.3776
-Linear dimensionality reduction: Survey, insights, and generalizations;https://dl.acm.org/doi/abs/10.5555/2789272.2886799
-Nonlinear supervised dimensionality reduction via smooth regular embeddings;https://www.sciencedirect.com/science/article/pii/S0031320318303522

@@ -49,10 +49,8 @@ Important: Base your entire response solely on the information provided in the c
 The next line will be offered you the prompt again:
 """
 
-
-
 def call_llm(context: str, prompt:str):
-
+    #LLM_MODEL = "llama3.2:3b"
     LLM_MODEL = "deepseek-r1"
 
     messages = [
@@ -75,59 +73,10 @@ def call_llm(context: str, prompt:str):
         ]
     response = ollama.chat(
         model= LLM_MODEL,
-        stream = False,
-        messages = messages
-    )
-
-    return response['message']['content']
-
-
-
-def combine_drafts(draft1: str, draft2:str, prompt:str):
-    #LLM_MODEL = "llama3.2:3b"
-    LLM_MODEL = "deepseek-r1"
-
-    
-    combine_prompt = f"""
-        You are an expert in information synthesis. Your task is to combine two versions of a scientific article structure on the same topic into a single refined version.
-
-        Topic: {prompt}
-
-        Version 1:
-        {draft1}
-
-        Version 2:
-        {draft2}
-
-        Instructions:
-
-            Carefully analyze both versions
-
-            Identify the strengths of each
-
-            Combine the best parts from each version
-
-            Maintain a logical and cohesive structure
-
-            Produce a single refined version that is better than both individual versions
-
-        Return only the final refined structure, without additional comments.
-    """
-    messages = [
-            {
-                "role": "system",
-                "content": "You are an assistant specialized in combining and refining scientific article structures.",
-            },
-            {
-                "role": "user",
-                "content": combine_prompt ,
-            }
-        ]
-    response = ollama.chat(
-        model= LLM_MODEL,
         stream = True,
         messages = messages
     )
+    print("Message: ", messages)
 
     #Como está no modo stream, a resposa virá por chunks
     #O último chunk virá com a mensagem "done"
@@ -136,21 +85,6 @@ def combine_drafts(draft1: str, draft2:str, prompt:str):
             yield chunk["message"]["content"]
         else:
             break
-
-    return response['message']['content']
-
-
-
-def call_two_drafts(context: str, prompt:str):
-    
-    draft1= call_llm(context, prompt)
-
-    draft2= call_llm(context, prompt)
-
-    
-    combined = combine_drafts(draft1, draft2, prompt)
-    
-    return combined
 
 def main():
     sidebar()
@@ -168,7 +102,7 @@ def main():
                 if f"toggle_{doc_name}" in st.session_state and not st.session_state[f"toggle_{doc_name}"]
             ]
             most_similar_docs = database.query_collection(prompt, exclude_docs=excluded_docs)
-            response = call_two_drafts(most_similar_docs["documents"], prompt)
+            response = call_llm(most_similar_docs["documents"], prompt)
             st.write_stream(response)
         
             with st.expander("See retrivied documents"):
