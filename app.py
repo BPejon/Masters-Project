@@ -48,12 +48,13 @@ Format your response as follows:
 Important: Base your entire response solely on the information provided in the context. Do not include any external knowledge or assumptions not present in the given text.
 The next line will be offered you the prompt again:
 """
+#LLM_MODEL = "deepseek-r1"
+LLM_MODEL = "llama3.2:3b"
 
 
 
 def call_llm(context: str, prompt:str):
 
-    LLM_MODEL = "deepseek-r1"
 
     messages = [
             {
@@ -84,8 +85,6 @@ def call_llm(context: str, prompt:str):
 
 
 def combine_drafts(draft1: str, draft2:str, prompt:str):
-    #LLM_MODEL = "llama3.2:3b"
-    LLM_MODEL = "deepseek-r1"
 
     
     combine_prompt = f"""
