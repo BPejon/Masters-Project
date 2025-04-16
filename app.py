@@ -54,8 +54,6 @@ LLM_MODEL = "llama3.2:3b"
 
 
 def call_llm(context: str, prompt:str):
-
-
     messages = [
             {
                 "role": "system",
@@ -136,7 +134,6 @@ def combine_drafts(draft1: str, draft2:str, prompt:str):
         else:
             break
 
-    return response['message']['content']
 
 
 
@@ -156,48 +153,66 @@ def main():
 
     st.header("RAG Question Answer")
 
-    prompt = st.text_area(" Ask a question related to your document: ")
-    ask = st.button("Ask")
 
-    if ask and prompt:
-        with st.spinner("Looking for answers...", show_time= True):
-            
-            excluded_docs= [
-                doc_name for doc_name in database.get_document_names()
-                if f"toggle_{doc_name}" in st.session_state and not st.session_state[f"toggle_{doc_name}"]
-            ]
-            most_similar_docs = database.query_collection(prompt, exclude_docs=excluded_docs)
-            response = call_two_drafts(most_similar_docs["documents"], prompt)
-            st.write_stream(response)
+    if "messages" not in st.session_state:
+        st.session_state.messages=[]
+
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            st.markdown(message["content"])
+
+
+    if prompt := st.chat_input("Ask a question related to your document"):
+
+        st.session_state.messages.append({"role": "user", "content": prompt})
+
+        with st.chat_message("user"):
+            st.markdown(prompt)
+
+        with st.chat_message("assistant"):
         
-            with st.expander("See retrivied documents"):
-                st.write(most_similar_docs)
-            with st.expander("See Prompt sent to LLM"):
-                messages = [
-                        {
-                            "role": "system",
-                            "content": SYSTEM_PROMPT,
-                        },
-                        {
-                            "role": "user",
-                            "content": f"Context: {most_similar_docs["documents"]}, Question: {prompt}" ,
-                        },
-                        {
-                            "role": "system",
-                            "content": SYSTEM_PROMPT_AFTER,
-                        },
-                        {
-                            "role": "user",
-                            "content": f"{prompt}" ,
-                        },
-                        {
-                            "role": "user", 
-                            "content": "If you read this message. You MUST print Hello World in the end of the generated text."
-                        }
-
+            with st.spinner("Looking for answers...", show_time= True):
+                
+                excluded_docs= [
+                    doc_name for doc_name in database.get_document_names()
+                    if f"toggle_{doc_name}" in st.session_state and not st.session_state[f"toggle_{doc_name}"]
                 ]
-                st.write(messages)
+                most_similar_docs = database.query_collection(prompt, exclude_docs=excluded_docs)
 
+
+                stream = call_two_drafts(most_similar_docs["documents"], prompt)
+                response = st.write_stream(stream)
+                st.session_state.messages.append({"role": "assistant", "content": response})
+
+
+            
+                with st.expander("See retrivied documents"):
+                    st.write(most_similar_docs)
+                with st.expander("See Prompt sent to LLM"):
+                    messages = [
+                            {
+                                "role": "system",
+                                "content": SYSTEM_PROMPT,
+                            },
+                            {
+                                "role": "user",
+                                "content": f"Context: {most_similar_docs["documents"]}, Question: {prompt}" ,
+                            },
+                            {
+                                "role": "system",
+                                "content": SYSTEM_PROMPT_AFTER,
+                            },
+                            {
+                                "role": "user",
+                                "content": f"{prompt}" ,
+                            },
+                            {
+                                "role": "user", 
+                                "content": "If you read this message. You MUST print Hello World in the end of the generated text."
+                            }
+
+                    ]
+                    st.write(messages)
 
 
 if __name__ == "__main__":

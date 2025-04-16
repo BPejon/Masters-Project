@@ -19,11 +19,11 @@ sudo apt update
 
 nesse arquivo de texto temos que colocar o nome das libs que iremos utilizar(talvez versão tmb?)
 
-AMBIENTE VIRUTAL
+AMBIENTE VIRTUAL
 
 para criar um ambiente virtual:
 
-python3 -m env caminho/da/pasta/
+python3 -m venv caminho/da/pasta/
 
 source caminho/da/pasta/bin/activate
 
