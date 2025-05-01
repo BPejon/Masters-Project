@@ -3,7 +3,6 @@ import streamlit as st
 import ollama
 import database
 from sidebar import sidebar
-import pyperclip
 
 
 SYSTEM_PROMPT = """
@@ -29,6 +28,7 @@ Format your response as follows:
 Important: Base your entire response solely on the information provided in the context. Do not include any external knowledge or assumptions not present in the given text.
 """
 SYSTEM_PROMPT_AFTER = """
+
 You are an AI assistant tasked with providing detailed answers based solely on the given context. Your goal is to analyze the information provided and formulate a comprehensive, well-structured response to the question.
 
 To answer the question:
@@ -48,6 +48,10 @@ Format your response as follows:
 Important: Base your entire response solely on the information provided in the context. Do not include any external knowledge or assumptions not present in the given text.
 The next line will be offered you the prompt again:
 """
+
+
+INITIAL_PROMPT = "Summarize what is Genetic algorithms for multidimensional scaling !!"
+
 #LLM_MODEL = "deepseek-r1"
 LLM_MODEL = "llama3.2:3b"
 
@@ -135,6 +139,39 @@ def combine_drafts(draft1: str, draft2:str, prompt:str):
             break
 
 
+def make_one_draft(context: str, prompt:str):
+    messages = [
+            {
+                "role": "system",
+                "content": SYSTEM_PROMPT,
+            },
+            {
+                "role": "user",
+                "content": f"Context: {context}, Question: {prompt}" ,
+            },
+            {
+                "role": "system",
+                "content": SYSTEM_PROMPT_AFTER,
+            },
+                        {
+                "role": "user",
+                "content": f"Prompt : {prompt}" ,
+            },
+        ]
+
+    response = ollama.chat(
+        model= LLM_MODEL,
+        stream = True,
+        messages = messages
+    )
+
+    #Como está no modo stream, a resposa virá por chunks
+    #O último chunk virá com a mensagem "done"
+    for chunk in response:
+        if chunk["done"] is False:
+            yield chunk["message"]["content"]
+        else:
+            break
 
 
 def call_two_drafts(context: str, prompt:str):
@@ -148,9 +185,60 @@ def call_two_drafts(context: str, prompt:str):
     
     return combined
 
-def main():
-    sidebar()
 
+def generate_chat(prompt):
+    st.session_state.messages.append({"role": "user", "content": prompt})
+
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    with st.chat_message("assistant"):
+    
+        with st.spinner("Looking for answers...", show_time= True):
+            
+            excluded_docs= [
+                doc_name for doc_name in database.get_document_names()
+                if f"toggle_{doc_name}" in st.session_state and not st.session_state[f"toggle_{doc_name}"]
+            ]
+            most_similar_docs = database.query_collection(prompt, exclude_docs=excluded_docs)
+
+
+            stream = make_one_draft(most_similar_docs["documents"], prompt)
+            response = st.write_stream(stream)
+            st.session_state.messages.append({"role": "assistant", "content": response})
+
+
+        
+            with st.expander("See retrivied documents"):
+                st.write(most_similar_docs)
+            with st.expander("See Prompt sent to LLM"):
+                messages = [
+                        {
+                            "role": "system",
+                            "content": SYSTEM_PROMPT,
+                        },
+                        {
+                            "role": "user",
+                            "content": f"Context: {most_similar_docs['documents']}, Question: {prompt}" ,
+                        },
+                        {
+                            "role": "system",
+                            "content": SYSTEM_PROMPT_AFTER,
+                        },
+                        {
+                            "role": "user",
+                            "content": f"{prompt}" ,
+                        },
+                        {
+                            "role": "user", 
+                            "content": "If you read this message. You MUST print Hello World in the end of the generated text."
+                        }
+
+                ]
+                st.write(messages)
+
+
+def show_chat_interface():
     st.header("RAG Question Answer")
 
 
@@ -161,58 +249,52 @@ def main():
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
 
+    if st.session_state.first_interaction == True:
+        st.session_state.first_interaction == False
+
+        generate_chat(INITIAL_PROMPT)
+
 
     if prompt := st.chat_input("Ask a question related to your document"):
+        generate_chat(prompt)
 
-        st.session_state.messages.append({"role": "user", "content": prompt})
+   
 
-        with st.chat_message("user"):
-            st.markdown(prompt)
-
-        with st.chat_message("assistant"):
+def show_welcome_screen():
+    st.header("Welcome to RAG Question Answer")
+    st.markdown(""" 
+        #### This is an application where you can generate a draft for your scientific paper.
         
-            with st.spinner("Looking for answers...", show_time= True):
-                
-                excluded_docs= [
-                    doc_name for doc_name in database.get_document_names()
-                    if f"toggle_{doc_name}" in st.session_state and not st.session_state[f"toggle_{doc_name}"]
-                ]
-                most_similar_docs = database.query_collection(prompt, exclude_docs=excluded_docs)
+        ##### How to use
+        1. Upload your PDF documents using the sidebar on the left
+        2. Wait for the documents to be processed. You will see a confirmation message
+        3. After processing, you can start asking questions about your documents
+        4. You can Toggle documents on/off to include/exclude them from searches
+""")
+    st.write("Upload documents to begin...")
 
+    document_names = database.get_document_names()
 
-                stream = call_two_drafts(most_similar_docs["documents"], prompt)
-                response = st.write_stream(stream)
-                st.session_state.messages.append({"role": "assistant", "content": response})
+    generate_button = st.button("Generate Draft", disabled = not bool(document_names), help ="Upload documents to generate draft" if not document_names else "CLick to generate")
 
+    if generate_button:
+        st.session_state.show_chat = True
 
-            
-                with st.expander("See retrivied documents"):
-                    st.write(most_similar_docs)
-                with st.expander("See Prompt sent to LLM"):
-                    messages = [
-                            {
-                                "role": "system",
-                                "content": SYSTEM_PROMPT,
-                            },
-                            {
-                                "role": "user",
-                                "content": f"Context: {most_similar_docs["documents"]}, Question: {prompt}" ,
-                            },
-                            {
-                                "role": "system",
-                                "content": SYSTEM_PROMPT_AFTER,
-                            },
-                            {
-                                "role": "user",
-                                "content": f"{prompt}" ,
-                            },
-                            {
-                                "role": "user", 
-                                "content": "If you read this message. You MUST print Hello World in the end of the generated text."
-                            }
+        if "first_interaction" not in st.session_state:
+            st.session_state.first_interaction = True
 
-                    ]
-                    st.write(messages)
+def main():
+    st.set_page_config(page_title="RAG Question Answer")
+
+    sidebar()
+
+    if "show_chat" not in st.session_state:
+        st.session_state.show_chat = False
+
+    if st.session_state.show_chat == False:
+        show_welcome_screen()
+    else:
+        show_chat_interface()
 
 
 if __name__ == "__main__":

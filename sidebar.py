@@ -24,11 +24,6 @@ def display_list_of_documents():
                     st.session_state[f"toggle_{doc_name}"] = True #padrão é 1 -> incluso na busca
                 st.checkbox("Included in search", key=f"toggle_{doc_name}")
 
-
-                # print(f"session: toogle{doc_name}")
-                # print(st.session_state[f"toggle_{doc_name}"])
-                # print(f"st session: {st.session_state}")
-
             with col_del_button:
                 delete_doc_button = st.button("X", key=f"delete_{doc_name}" )
                 if delete_doc_button:
@@ -44,15 +39,10 @@ def sidebar():
 
     with st.sidebar:
 
-        st.set_page_config(page_title="RAG Question Answer")
         st.header("Rag Question Answer")
         uploaded_file= st.file_uploader("Upload PDF File for QnA", type=["pdf"], accept_multiple_files=True)
 
-        process = st.button(
-            "Process"
-        )
-
-        if uploaded_file and process:
+        if uploaded_file:
             with st.spinner("Inserting the documents in the database...", show_time = True):
                 for doc in uploaded_file:
                     normalize_uploaded_file_name = doc.name.translate(
