@@ -1,7 +1,7 @@
 import streamlit as st
 
 import database
-
+import time
 
 def delete_db_button():
         db_get = st.button("Reset Database")
@@ -40,9 +40,18 @@ def sidebar():
     with st.sidebar:
 
         st.header("Rag Question Answer")
-        uploaded_file= st.file_uploader("Upload PDF File for QnA", type=["pdf"], accept_multiple_files=True)
 
-        if uploaded_file:
+        #Verifica se já processou os arquivos
+        processed_in_session = st.session_state.get('files_processed', False)
+
+        uploaded_file= st.file_uploader("Upload PDF File for QnA", type=["pdf"], accept_multiple_files=True, disabled = processed_in_session)
+
+
+        process = st.button(
+            "Process"
+        )
+
+        if uploaded_file and process:
             with st.spinner("Inserting the documents in the database...", show_time = True):
                 for doc in uploaded_file:
                     normalize_uploaded_file_name = doc.name.translate(
@@ -50,6 +59,14 @@ def sidebar():
                     )
                     all_splits = database.process_document(doc)
                     database.add_to_vector_collection(all_splits, normalize_uploaded_file_name, doc.name)
+            st.session_state.files_processed = True
+            st.success("Documents processed successfully!")
+            st.toast("Documents ready! Click 'Generate Draft' to start")
+            time.sleep(1)
+
+        if processed_in_session and st.button("Upload new Documents"):
+            st.session_state.files_processed = False
+            st.rerun()
 
         display_list_of_documents()
 

@@ -279,17 +279,24 @@ def show_welcome_screen():
 
     if generate_button:
         st.session_state.show_chat = True
-
-        if "first_interaction" not in st.session_state:
-            st.session_state.first_interaction = True
+        st.rerun()
 
 def main():
     st.set_page_config(page_title="RAG Question Answer")
 
     sidebar()
 
+    ##Inicializa as variáveis de sessões
     if "show_chat" not in st.session_state:
         st.session_state.show_chat = False
+    if "first_interaction" not in st.session_state:
+        st.session_state.first_interaction = True
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+    if "files_processed" not in st.session_state:
+        st.session_state.files_processed = False
+
+    print(f"SC in main {st.session_state.show_chat}")
 
     if st.session_state.show_chat == False:
         show_welcome_screen()

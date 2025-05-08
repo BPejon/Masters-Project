@@ -64,10 +64,21 @@ def process_document(uploaded_file: UploadedFile) -> List[Document]:
 def query_collection(prompt:str, n_results: int = 99999 , exclude_docs:list[str] = None, max_embeddings_per_doc: int = 200):
     collection = get_vector_collection()
     CONTROL_NUMBER = 350
+    
+    ##Verifica se há documento
+    try:
+        current_count = collection.count()
+    except:
+        current_count = 0
+
+    #Se o número de chunks solicitados for menor ao total, pega o nosso valor. Se a gente solicitou mais do que existe, então pega o máximo
+    adjusted_n_results = min(n_results*CONTROL_NUMBER, current_count)
+    if adjusted_n_results <= 0:
+        return {"documents":[[]], "ids": [[]], "metadatas":[[]]}
 
     query_params ={
         "query_texts" :[prompt],
-        "n_results": n_results * CONTROL_NUMBER,
+        "n_results": adjusted_n_results,
     }
 
     if exclude_docs:
