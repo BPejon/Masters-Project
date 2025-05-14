@@ -6,7 +6,8 @@ from sidebar import sidebar
 
 
 SYSTEM_PROMPT = """
-You are an AI assistant tasked with providing detailed answers based solely on the given context. Your goal is to analyze the information provided and formulate a comprehensive, well-structured response to the question.
+You are a PDH Professor focused on Material Science papers.
+Your task is to write an outline of a review paper on the subject given within CONTEXT.
 
 context will be passed as "Context:"
 user question will be passed as "Question:"
@@ -20,10 +21,9 @@ To answer the question:
 
 Format your response as follows:
 1. Use clear, concise language.
-2. Organize your answer into paragraphs for readability.
+2. Organize your answer into paragraphs and sections.
 3. Use bullet points or numbered lists where appropriate to break down complex information.
 4. If relevant, include any headings or subheadings to structure your response.
-5. Ensure proper grammar, punctuation, and spelling throughout your answer.
 
 Important: Base your entire response solely on the information provided in the context. Do not include any external knowledge or assumptions not present in the given text.
 """
@@ -43,17 +43,20 @@ Format your response as follows:
 2. Organize your answer into paragraphs for readability.
 3. Use bullet points or numbered lists where appropriate to break down complex information.
 4. If relevant, include any headings or subheadings to structure your response.
-5. Ensure proper grammar, punctuation, and spelling throughout your answer.
-
-Important: Base your entire response solely on the information provided in the context. Do not include any external knowledge or assumptions not present in the given text.
 The next line will be offered you the prompt again:
 """
 
 
-INITIAL_PROMPT = "Summarize what is Genetic algorithms for multidimensional scaling !!"
+INITIAL_PROMPT = """
+First, give me a summarization of the documents inserts.
+Then, based on the summarization generate an outline of a review paper on the subject of the summarization.
+Use the understanding provided in the PDFs presented in the prompt as Context.
+I want the review to be comprehensive and also provide details about the methods.
+I will later ask you to expand the context of the sections in the outline.
+"""
 
 #LLM_MODEL = "deepseek-r1"
-LLM_MODEL = "llama3.2:3b"
+#LLM_MODEL = "llama3.2:3b"
 
 
 
@@ -77,7 +80,7 @@ def call_llm(context: str, prompt:str):
             },
         ]
     response = ollama.chat(
-        model= LLM_MODEL,
+        model= st.session_state.llm_model,
         stream = False,
         messages = messages
     )
@@ -125,7 +128,7 @@ def combine_drafts(draft1: str, draft2:str, prompt:str):
             }
         ]
     response = ollama.chat(
-        model= LLM_MODEL,
+        model= st.session_state.llm_model,
         stream = True,
         messages = messages
     )
@@ -160,10 +163,11 @@ def make_one_draft(context: str, prompt:str):
         ]
 
     response = ollama.chat(
-        model= LLM_MODEL,
+        model= st.session_state.llm_model,
         stream = True,
         messages = messages
     )
+
 
     #Como está no modo stream, a resposa virá por chunks
     #O último chunk virá com a mensagem "done"
@@ -267,24 +271,31 @@ def show_welcome_screen():
         
         ##### How to use
         1. Upload your PDF documents using the sidebar on the left
-        2. Wait for the documents to be processed. You will see a confirmation message
-        3. After processing, you can start asking questions about your documents
-        4. You can Toggle documents on/off to include/exclude them from searches
+        2. Click "Add to Database" button to add the documents into database
+        3. Wait for the documents to be processed. You will see a confirmation message
+        4. After processing, you can start asking questions about your documents
+        5. You can Toggle documents on/off to include/exclude them from searches
 """)
     st.write("Upload documents to begin...")
 
     document_names = database.get_document_names()
+    
+    llm_model = st.radio(
+        "Choose one Large Language Model to generate the Cientific Draft.",
+        ["llama3.2:3b","deepseek-r1"],
+        index= 0,
+    )
 
-    generate_button = st.button("Generate Draft", disabled = not bool(document_names), help ="Upload documents to generate draft" if not document_names else "CLick to generate")
+    generate_button = st.button("Generate Draft", disabled = not bool(document_names), help ="Upload documents to generate draft" if not document_names else "CLick to generate", key = "generate_button")
 
-    if generate_button:
+    if generate_button: 
+        st.session_state.llm_model = llm_model
         st.session_state.show_chat = True
         st.rerun()
 
 def main():
     st.set_page_config(page_title="RAG Question Answer")
 
-    sidebar()
 
     ##Inicializa as variáveis de sessões
     if "show_chat" not in st.session_state:
@@ -295,8 +306,10 @@ def main():
         st.session_state.messages = []
     if "files_processed" not in st.session_state:
         st.session_state.files_processed = False
-
-    print(f"SC in main {st.session_state.show_chat}")
+    if "llm_model" not in st.session_state:
+        st.session_state.llm_model = "llama3.2:3b"
+    
+    sidebar()
 
     if st.session_state.show_chat == False:
         show_welcome_screen()

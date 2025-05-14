@@ -85,12 +85,12 @@ def query_collection(prompt:str, n_results: int = 99999 , exclude_docs:list[str]
         query_params["where"] = {"document_name": {"$nin": exclude_docs}}
 
     results = collection.query(**query_params)
-    print("--------")
+    #print("--------")
     filtered_documents = []
     filtered_ids = []
     doc_count = {}
 
-    print(f"Results: {results}")
+    #print(f"Results: {results}")
 
     for doc, metadata,doc_id in zip(results["documents"][0], results["metadatas"][0], results["ids"][0]):
         doc_name = metadata["document_name"]
@@ -144,7 +144,7 @@ def get_document_names() -> list[str]:
 
         return list(document_names)
     except:
-        st.write("")
+        st.write("Error getting document")
 
 def remove_document_from_db(filename:str):
     try:   

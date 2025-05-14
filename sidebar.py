@@ -32,8 +32,6 @@ def display_list_of_documents():
                         if is_success:
                             st.toast(f"Document '{doc_name}' deleted successfully!")
 
-
-
 def sidebar():
 
 
@@ -41,32 +39,24 @@ def sidebar():
 
         st.header("Rag Question Answer")
 
-        #Verifica se já processou os arquivos
-        processed_in_session = st.session_state.get('files_processed', False)
+        # File uploader com estado persistente
+        if 'uploaded_files_processed' not in st.session_state:
+            st.session_state.uploaded_files_processed = False
 
-        uploaded_file= st.file_uploader("Upload PDF File for QnA", type=["pdf"], accept_multiple_files=True, disabled = processed_in_session)
+        uploaded_files= st.file_uploader("Upload PDF File for QnA", type=["pdf"], accept_multiple_files=True, key = "file_uploader")
 
+        process_button = st.button("Add to Database")
 
-        process = st.button(
-            "Process"
-        )
-
-        if uploaded_file and process:
+        if uploaded_files and process_button:
             with st.spinner("Inserting the documents in the database...", show_time = True):
-                for doc in uploaded_file:
+                for doc in uploaded_files:
                     normalize_uploaded_file_name = doc.name.translate(
                         str.maketrans({"-":"_", ".": "_", " ":"_"})
                     )
                     all_splits = database.process_document(doc)
                     database.add_to_vector_collection(all_splits, normalize_uploaded_file_name, doc.name)
-            st.session_state.files_processed = True
             st.success("Documents processed successfully!")
             st.toast("Documents ready! Click 'Generate Draft' to start")
-            time.sleep(1)
-
-        if processed_in_session and st.button("Upload new Documents"):
-            st.session_state.files_processed = False
-            st.rerun()
 
         display_list_of_documents()
 
