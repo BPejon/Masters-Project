@@ -17,7 +17,7 @@ ollama:
 	sudo systemctl start ollama
 	sleep 10
 	ollama pull nomic-embed-text
-	ollama pull llama3:8b
+	ollama pull llama3.2:3b
 
 deps: fix-dpk
 	@echo "Instalando dependências..."
@@ -32,5 +32,8 @@ update:
 	@echo "Código atualizado!"
 
 run:
+	@echo "Atualizando código..."
+	git pull
+	@echo "Código atualizado!"
 	@echo "Iniciando aplicação..."
 	. env/bin/activate && streamlit run app.py
