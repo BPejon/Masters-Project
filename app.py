@@ -44,17 +44,7 @@ Format your response as follows:
 3. Use bullet points or numbered lists where appropriate to break down complex information.
 4. If relevant, include any headings or subheadings to structure your response.
 The next line will be offered you the prompt again:
-"""
-
-
-INITIAL_PROMPT = """
-First, give me a summarization of the documents inserts.
-Then, based on the summarization generate an outline of a review paper on the subject of the summarization.
-Use the understanding provided in the PDFs presented in the prompt as Context.
-I want the review to be comprehensive and also provide details about the methods.
-I will later ask you to expand the context of the sections in the outline.
-"""
-
+""" 
 #LLM_MODEL = "deepseek-r1"
 #LLM_MODEL = "llama3.2:3b"
 
@@ -233,11 +223,6 @@ def generate_chat(prompt):
                             "role": "user",
                             "content": f"{prompt}" ,
                         },
-                        {
-                            "role": "user", 
-                            "content": "If you read this message. You MUST print Hello World in the end of the generated text."
-                        }
-
                 ]
                 st.write(messages)
 
@@ -256,7 +241,14 @@ def show_chat_interface():
     if st.session_state.first_interaction == True:
         st.session_state.first_interaction == False
 
-        generate_chat(INITIAL_PROMPT)
+        initial_prompt = f"""
+Based on the summarization generate an outline of a review paper on the subject {st.session_state.research_topic}.
+Use the understanding provided in the PDFs presented in the prompt as Context.
+I want the review to be comprehensive and also provide details about the methods.
+I will later ask you to expand the context of the sections in the outline.
+"""
+
+        generate_chat(initial_prompt)
 
 
     if prompt := st.chat_input("Ask a question related to your document"):
@@ -279,6 +271,13 @@ def show_welcome_screen():
     st.write("Upload documents to begin...")
 
     document_names = database.get_document_names()
+
+    research_topic = st.text_input(
+        "Enter your research topic:",
+        placeholder = "e.g Advanced Materials for Solar Cells",
+        help = "This will be used to customize your scientific draft"
+
+    )
     
     llm_model = st.radio(
         "Choose one Large Language Model to generate the Cientific Draft.",
@@ -289,13 +288,13 @@ def show_welcome_screen():
     generate_button = st.button("Generate Draft", disabled = not bool(document_names), help ="Upload documents to generate draft" if not document_names else "CLick to generate", key = "generate_button")
 
     if generate_button: 
+        st.session_state.research_topic = research_topic
         st.session_state.llm_model = llm_model
         st.session_state.show_chat = True
         st.rerun()
 
 def main():
     st.set_page_config(page_title="RAG Question Answer")
-
 
     ##Inicializa as variáveis de sessões
     if "show_chat" not in st.session_state:
@@ -308,7 +307,8 @@ def main():
         st.session_state.files_processed = False
     if "llm_model" not in st.session_state:
         st.session_state.llm_model = "llama3.2:3b"
-    
+    if "research_topic" not in st.session_state:
+        st.session_state.research_topic = ""
     sidebar()
 
     if st.session_state.show_chat == False:
