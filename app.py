@@ -45,10 +45,6 @@ Format your response as follows:
 4. If relevant, include any headings or subheadings to structure your response.
 The next line will be offered you the prompt again:
 """ 
-#LLM_MODEL = "deepseek-r1"
-#LLM_MODEL = "llama3.2:3b"
-
-
 
 def call_llm(context: str, prompt:str):
     messages = [
@@ -239,11 +235,11 @@ def show_chat_interface():
             st.markdown(message["content"])
 
     if st.session_state.first_interaction == True:
-        st.session_state.first_interaction == False
+        st.session_state.first_interaction = False
 
         initial_prompt = f"""
-Based on the summarization generate an outline of a review paper on the subject {st.session_state.research_topic}.
-Use the understanding provided in the PDFs presented in the prompt as Context.
+Generate an outline of a review paper on the subject {st.session_state.research_topic}.
+Use the understanding provided in the PDFs and the chunks presented in the prompt as Context.
 I want the review to be comprehensive and also provide details about the methods.
 I will later ask you to expand the context of the sections in the outline.
 """
@@ -265,10 +261,12 @@ def show_welcome_screen():
         1. Upload your PDF documents using the sidebar on the left
         2. Click "Add to Database" button to add the documents into database
         3. Wait for the documents to be processed. You will see a confirmation message
-        4. After processing, you can start asking questions about your documents
-        5. You can Toggle documents on/off to include/exclude them from searches
+        4. Specify the research topic for the LLM to create a scientific draft
+        5. Select your LLM. Choose Llama3.2 if you have a low spec machine. Otherwise, select deepseek for better results.
+        6. Click "Generate Draft" to generate your first draft
+                
+        You can Toggle documents on/off to include/exclude them from searches
 """)
-    st.write("Upload documents to begin...")
 
     document_names = database.get_document_names()
 
@@ -285,16 +283,16 @@ def show_welcome_screen():
         index= 0,
     )
 
-    generate_button = st.button("Generate Draft", disabled = not bool(document_names), help ="Upload documents to generate draft" if not document_names else "CLick to generate", key = "generate_button")
+    generate_button = st.button("Generate Draft", disabled = not bool(document_names), help ="Upload documents to generate draft" if not document_names else "Click to generate", key = "generate_button")
 
-    if generate_button: 
+    if generate_button and research_topic != "": 
         st.session_state.research_topic = research_topic
         st.session_state.llm_model = llm_model
         st.session_state.show_chat = True
         st.rerun()
 
 def main():
-    st.set_page_config(page_title="RAG Question Answer")
+    st.set_page_config(page_title="RAG Question Answer", initial_sidebar_state="expanded")
 
     ##Inicializa as variáveis de sessões
     if "show_chat" not in st.session_state:
