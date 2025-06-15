@@ -61,7 +61,9 @@ def process_document(uploaded_file: UploadedFile) -> List[Document]:
 
     return text_splitter.split_documents(docs)
 
-def query_collection(prompt:str, n_results: int = 99999 , exclude_docs:list[str] = None, max_embeddings_per_doc: int = 200):
+#n_results = how many chuncks will be passed to the query
+#max_embeddings_per_doc = max number of chunks that is able to pass by a singular document
+def query_collection(prompt:str, n_results: int = 200 , exclude_docs:list[str] = None, max_embeddings_per_doc: int = 20):
     collection = get_vector_collection()
     CONTROL_NUMBER = 350
     

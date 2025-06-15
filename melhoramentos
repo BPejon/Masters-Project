@@ -1,0 +1,37 @@
+tela inicial
+
+dar um feedback depois de carregar arquivos (pronto para próximo passo)
+
+avisar que o carregamento de arquivos é demorado… indicar progresso com paper 1… added (ao invés de data…). No final, informar quantos foram incluídos? 
+
+opções see retrieved e see prompt podem ficar mais `escondidas` (não fazemparte do fluxo principal do usuário) 
+
+no deepseek (?) - dar opção de desativar feedback
+
+dar opção de copiar textos (prompts & respostas)
+
+dar opção de salvar sessão e retomar depois? 
+
+depois de alguma interação a opção de escolher entre os modelos some…
+
+ideias interface: 
+
+~~sugerir alguns prompts iniciais?~~ 
+
+~~please generate an outline of a review paper for the subject "XXXX". Use the understanding provided in the PDFs presented in the prompt as Context.~~
+
+~~please generate an outline of a review paper for the subject "XXXX", considering the following objectives: XXXX. Use the understanding provided in the PDFs presented in the prompt as Context.~~
+
+~~Using the information in the PDFs presented in the prompt as Context, please identify and discuss the most important scientifc findings about “XXXX” that should be addressed in a review paper.~~
+
+~~Using the information in the PDFs presented in the prompt as Context, please identify which should be the objectives of a comprehensive review paper on topic “XXXX”.~~
+
+~~Using the information in the PDFs presented in the prompt as Context, please expand the content of the Section  “XXXX” [ regarding  (specify focus, e.g., …)]~~
+
+perguntar se o usuário quer expandir os conteúdos das seções, e se a resposta for sim, já gerar os prompts para fazer isso para todas? 
+
+Iteração
+
+Please expand the content of Section XX of the proposed outline, considering the topics…  começar pelas de conteúdo, terminar com as conclusões e a introdução? 
+
+Figuras importantes para seções? refs. importantes para seções?

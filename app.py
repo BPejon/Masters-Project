@@ -199,7 +199,7 @@ def generate_chat(prompt):
 
 
         
-            with st.expander("See retrivied documents"):
+            with st.expander("See retrieved documents"):
                 st.write(most_similar_docs)
             with st.expander("See Prompt sent to LLM"):
                 messages = [
@@ -255,7 +255,7 @@ I will later ask you to expand the context of the sections in the outline.
 def show_welcome_screen():
     st.header("Welcome to RAG Question Answer")
     st.markdown(""" 
-        #### This is an application where you can generate a draft for your scientific paper.
+        #### Explore the literature to identify the important topics and relevant contents for a review paper on your subject.
         
         ##### How to use
         1. Upload your PDF documents using the sidebar on the left
@@ -271,19 +271,19 @@ def show_welcome_screen():
     document_names = database.get_document_names()
 
     research_topic = st.text_input(
-        "Enter your research topic:",
+        "Enter your research theme:",
         placeholder = "e.g Advanced Materials for Solar Cells",
         help = "This will be used to customize your scientific draft"
 
     )
     
     llm_model = st.radio(
-        "Choose one Large Language Model to generate the Cientific Draft.",
+        "Choose one Large Language Model to generate the Scientific Draft.",
         ["llama3.2:3b","deepseek-r1"],
         index= 0,
     )
 
-    generate_button = st.button("Generate Draft", disabled = not bool(document_names), help ="Upload documents to generate draft" if not document_names else "Click to generate", key = "generate_button")
+    generate_button = st.button("Generate", disabled = not bool(document_names), help ="Upload documents to generate draft" if not document_names else "Click to generate", key = "generate_button")
 
     if generate_button and research_topic != "": 
         st.session_state.research_topic = research_topic
