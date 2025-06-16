@@ -5,7 +5,7 @@ import database
 from sidebar import sidebar
 
 
-SYSTEM_PROMPT = """
+SYSTEM_PROMPT :str= """
 You are a PDH Professor focused on Material Science papers.
 Your task is to write an outline of a review paper on the subject given within CONTEXT.
 
@@ -46,11 +46,13 @@ Format your response as follows:
 The next line will be offered you the prompt again:
 """ 
 
-def call_llm(context: str, prompt:str):
+
+
+def call_llm(context: str, prompt:str, system_prompt:str = SYSTEM_PROMPT):
     messages = [
             {
                 "role": "system",
-                "content": SYSTEM_PROMPT,
+                "content": system_prompt,
             },
             {
                 "role": "user",
@@ -176,6 +178,17 @@ def call_two_drafts(context: str, prompt:str):
     return combined
 
 
+
+def get_most_similar_docs(prompt:str):
+    excluded_docs= [
+        doc_name for doc_name in database.get_document_names()
+        if f"toggle_{doc_name}" in st.session_state and not st.session_state[f"toggle_{doc_name}"]
+    ]
+
+    most_similar_docs = database.query_collection(prompt, exclude_docs=excluded_docs)
+    
+    return most_similar_docs
+
 def generate_chat(prompt):
     st.session_state.messages.append({"role": "user", "content": prompt})
 
@@ -223,6 +236,52 @@ def generate_chat(prompt):
                 st.write(messages)
 
 
+def generate_sections(user_prompt:str):
+
+    section_prompt= f"""
+Analyze the documents I will provide and then create 8 sections for a scientific literature review on this theme: {user_prompt}.
+    
+    Return only the list of sections in this exact format:
+    1 - Section Name
+    2 - Section Name
+    ...
+    8 - Section Name
+    
+    Do not include any additional text or explanations.
+
+"""
+    most_similar_docs = get_most_similar_docs(section_prompt)
+    sections_response = call_llm(most_similar_docs["documents"], section_prompt,"") #Vazio pro system prompt, pq quero que o prompt acima se sobressaia
+
+    # Extrai as seções da resposta
+    sections = [line.strip() for line in sections_response.split('\n') if line.strip()]
+
+    # Pega a primeira seção
+    if sections:
+        first_section = sections[0]
+        
+        # Segundo prompt para expandir a primeira seção
+        draft_prompt = f"""
+        Write a draft for a literature scientific review on {user_prompt} about the section {first_section}.
+        The draft should be:
+            - Comprehensive and detailed
+            - Well-structured with paragraphs
+            - Organize your answer into paragraphs and subsections.
+            - Based strictly on the provided context
+            - Approximately 300-500 words
+            
+            Important: Base your entire response solely on the information provided in the context. Do not include any external knowledge or assumptions not present in the given text.
+
+        """
+        most_similar_docs_first_section = get_most_similar_docs(draft_prompt)
+        
+        # Chamada para gerar o draft da primeira seção
+        draft_response = call_llm(most_similar_docs_first_section["documents"], draft_prompt,"")
+        
+        return sections, first_section, draft_response
+    return [], "", ""
+
+
 def show_chat_interface():
     st.header("RAG Question Answer")
 
@@ -236,6 +295,10 @@ def show_chat_interface():
 
     if st.session_state.first_interaction == True:
         st.session_state.first_interaction = False
+
+
+    with st.spinner("Generating sections and first draft..."):
+        generate_sections()
 
         initial_prompt = f"""
 Generate an outline of a review paper on the subject {st.session_state.research_topic}.
