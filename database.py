@@ -93,7 +93,7 @@ def process_document(uploaded_file: UploadedFile) -> List[Document]:
 #max_embeddings_per_doc = max number of chunks that is able to pass by a singular document
 def query_collection(prompt:str, n_results: int = 200 , exclude_docs:list[str] = None, max_embeddings_per_doc: int = 15):
     collection = get_vector_collection()
-    CONTROL_NUMBER = 350
+    CONTROL_NUMBER = 5
     
     ##Verifica se há documento
     try:

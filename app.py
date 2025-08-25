@@ -198,6 +198,37 @@ def make_one_draft(context: str, prompt:str):
         messages = messages
     )
 
+def refine_full_article(all_sections: list[str], user_prompt: str):
+    """Envia todas as seções para a LLM revisar e tirar inconsistências"""
+    full_text = "\n\n".join(all_sections)
+
+    refine_prompt = f"""
+    You are a professor in Material Science. You received multiple sections of a scientific review paper.
+    Your task is to unify them into a single coherent article.
+
+    Topic: {user_prompt}
+
+    Sections draft:
+    {full_text}
+
+    Instructions:
+    - Eliminate inconsistencies and redundancies
+    - Ensure logical flow between sections
+    - Improve transitions
+    - Keep scientific tone
+    - Return only the final unified text
+    """
+
+    response = ollama.chat(
+        model=st.session_state.llm_model,
+        stream=False,
+        messages=[
+            {"role": "system", "content": "You are an expert scientific editor."},
+            {"role": "user", "content": refine_prompt}
+        ]
+    )
+    return response["message"]["content"]
+
 def generate_text_llm_no_stream(context: str, prompt:str, system_prompt:str = SYSTEM_PROMPT):
     messages = [
             {
@@ -311,6 +342,8 @@ def generate_chat(prompt):
 def generate_sections(user_prompt:str):
     st.session_state.messages.append({"role": "user", "content": user_prompt})
 
+    # garantir lista limpa
+    st.session_state.sections_drafts = []
 
     section_prompt= f"""
     Analyze the documents I will provide and then create 8 sections for a scientific literature review on this theme: {user_prompt}.
@@ -327,43 +360,43 @@ def generate_sections(user_prompt:str):
     most_similar_docs = get_most_similar_docs(section_prompt)
 
     sections_response = generate_text_llm_no_stream(most_similar_docs["documents"], section_prompt, "Do not put the <think> on the result text ") #Vazio pro system prompt, pq quero que o prompt acima se sobressaia
-        
+    
     print(f"Sections antes de filtrar {sections_response}")
     # Extrai as seções da resposta
     sections = [line.strip() for line in sections_response.split('\n') if line.strip()]
+    
     print(f"Sections {sections}")
+    
     with st.chat_message("user"):
             st.markdown(user_prompt)
     print(f"Sections antes de entrar : {sections}")
 
    
-    with st.chat_message("assistant"):
+    # Gerar os drafts de todas as seções e salvar
+    for section_theme in sections:
+        draft_prompt = f"""
+        Write only one section for a literature scientific review on {user_prompt} about the section {section_theme}.
+        The section should be:
+            - Comprehensive and detailed
+            - Well-structured with paragraphs
+            - Organize your answer into paragraphs and subsections.
+            - Based strictly on the provided context
+            - Maximum of 250 words
+        """
+        most_similar_docs_section_theme = get_most_similar_docs(draft_prompt, 10, 5)
 
-    # Pega a primeira seção
-        if sections:
-            for section_theme in sections:
-                print("######")
-                print(f"Escrevendo a sessão : {section_theme}")
-                # Segundo prompt para expandir a primeira seção
-                draft_prompt = f"""
-                Write only one section for a literature scientific review on {user_prompt} about the section {section_theme}.
-                The section should be:
-                    - Comprehensive and detailed
-                    - Well-structured with paragraphs
-                    - Organize your answer into paragraphs and subsections.
-                    - Based strictly on the provided context
-                    - Maximun of 250 words
-                    
-                    Important: Base your entire response solely on the information provided in the context. Do not include any external knowledge or assumptions not present in the given text.
-                """
-                most_similar_docs_section_theme = get_most_similar_docs(draft_prompt, 15,5)
-                
-                # Chamada para gerar o draft da primeira seção
-                print(f"Documentos coletados para esse seção: {most_similar_docs_section_theme["documents"]}")
-                draft_response = generate_text_stream(most_similar_docs_section_theme["documents"], draft_prompt)
-                print(draft_response)
-                draft_response = st.write(draft_response)
-                st.session_state.messages.append({"role": "assistant", "content": draft_response})
+        draft_response = generate_text_llm_no_stream(
+            most_similar_docs_section_theme["documents"], draft_prompt
+        )
+
+        # salvar draft da seção
+        st.session_state.sections_drafts.append(f"{section_theme}\n{draft_response}")
+
+    final_article = refine_full_article(st.session_state.sections_drafts, user_prompt)
+
+    with st.chat_message("assistant"):
+        st.markdown(final_article)
+    st.session_state.messages.append({"role": "assistant", "content": final_article})
             
 def show_chat_interface():
     st.header("RAG Question Answer")
