@@ -1,6 +1,6 @@
 # Makefile para instalação dentro do WSL
 
-.PHONY: all install ollama deps run fix-dpk update
+.PHONY: all install ollama deps run fix-dpk update env
 
 all: ollama deps run
 
@@ -33,6 +33,10 @@ update:
 	@echo "Atualizando código..."
 	git pull
 	@echo "Código atualizado!"
+
+env:
+	@echo "Inicializando ambiente"
+	env/bin/activate
 
 run: update
 	@echo "Iniciando aplicação..."

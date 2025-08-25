@@ -46,9 +46,8 @@ Format your response as follows:
 The next line will be offered you the prompt again:
 """ 
 
-
-
-def call_llm(context: str, prompt:str, system_prompt:str = SYSTEM_PROMPT):
+# Nao faço ideia do pq mas essa função n funciona....
+def generate_text_stream(context: str, prompt:str, system_prompt:str = SYSTEM_PROMPT):
     messages = [
             {
                 "role": "system",
@@ -69,13 +68,56 @@ def call_llm(context: str, prompt:str, system_prompt:str = SYSTEM_PROMPT):
         ]
     response = ollama.chat(
         model= st.session_state.llm_model,
-        stream = False,
+        stream = True,
         messages = messages
     )
 
-    return response['message']['content']
+    buffer = ""  # Buffer para acumular conteúdo entre chunks
+    in_think_block = False  # Flag para indicar se estamos dentro de um bloco <think>
 
-
+    for chunk in response:
+        if chunk["done"] is False:
+            content = chunk["message"]["content"]
+            buffer += content
+            
+            # Processa o buffer para remover blocos <think>
+            while True:
+                if not in_think_block:
+                    # Procura por abertura de <think>
+                    think_start = buffer.find("<think>")
+                    if think_start == -1:
+                        # Não há <think>, pode yield todo o buffer
+                        if buffer:
+                            yield buffer
+                            buffer = ""
+                        break
+                    
+                    # Yield conteúdo antes do <think>
+                    if think_start > 0:
+                        yield buffer[:think_start]
+                    
+                    # Atualiza buffer e flag
+                    buffer = buffer[think_start + len("<think>"):]
+                    in_think_block = True
+                else:
+                    # Procura por fechamento de </think>
+                    think_end = buffer.find("</think>")
+                    if think_end == -1:
+                        # Não encontrou fechamento, descarta o buffer atual
+                        buffer = ""
+                        break
+                    
+                    # Pula o conteúdo entre <think> e </think>
+                    buffer = buffer[think_end + len("</think>"):]
+                    in_think_block = False
+                    
+                    # Continua processando o restante do buffer
+        else:
+            break
+    
+    # Yield qualquer conteúdo restante fora de blocos <think>
+    if buffer and not in_think_block:
+        yield buffer
 
 def combine_drafts(draft1: str, draft2:str, prompt:str):
 
@@ -117,7 +159,7 @@ def combine_drafts(draft1: str, draft2:str, prompt:str):
         ]
     response = ollama.chat(
         model= st.session_state.llm_model,
-        stream = True,
+        stream = False,
         messages = messages
     )
 
@@ -156,21 +198,51 @@ def make_one_draft(context: str, prompt:str):
         messages = messages
     )
 
+def generate_text_llm_no_stream(context: str, prompt:str, system_prompt:str = SYSTEM_PROMPT):
+    messages = [
+            {
+                "role": "system",
+                "content": SYSTEM_PROMPT,
+            },
+            {
+                "role": "user",
+                "content": f"Context: {context}, Question: {prompt}" ,
+            },
+        ]
 
-    #Como está no modo stream, a resposa virá por chunks
-    #O último chunk virá com a mensagem "done"
-    for chunk in response:
-        if chunk["done"] is False:
-            yield chunk["message"]["content"]
-        else:
-            break
+    response = ollama.chat(
+        model= st.session_state.llm_model,
+        stream = False,
+        messages = messages
+    )
+    full_response = response['message']['content']
+    # Extrai o conteúdo <think> se existir
+    # Extrai TODO o conteúdo <think> (mesmo que mal formado ou múltiplos)
+    think_contents = []
+    while "<think>" in full_response:
+        start = full_response.find("<think>") + len("<think>")
+        end = full_response.find("</think>", start) if "</think>" in full_response[start:] else len(full_response)
+        
+        think_content = full_response[start:end].strip()
+        think_contents.append(think_content)
+        
+        # Remove o bloco atual (com ou sem fechamento)
+        full_response = full_response[:start-len("<think>")] + full_response[end+(len("</think>") if "</think>" in full_response[start:] else 0):]
+    
+    # Armazena todos os conteúdos <think> encontrados
+    st.session_state.think_content = "\n\n---\n\n".join(think_contents) if think_contents else ""
+    
+    # Remove quaisquer fragmentos remanescentes
+    full_response = full_response.replace("<think>", "").replace("</think>", "").strip()
+   
+    return full_response
 
 
 def call_two_drafts(context: str, prompt:str):
     
-    draft1= call_llm(context, prompt)
+    draft1= generate_text_stream(context, prompt)
 
-    draft2= call_llm(context, prompt)
+    draft2= generate_text_stream(context, prompt)
 
     
     combined = combine_drafts(draft1, draft2, prompt)
@@ -179,13 +251,13 @@ def call_two_drafts(context: str, prompt:str):
 
 
 
-def get_most_similar_docs(prompt:str):
+def get_most_similar_docs(prompt:str, n_chunks: int= 10, max_chuks_per_docs:int = 15):
     excluded_docs= [
         doc_name for doc_name in database.get_document_names()
         if f"toggle_{doc_name}" in st.session_state and not st.session_state[f"toggle_{doc_name}"]
     ]
 
-    most_similar_docs = database.query_collection(prompt, exclude_docs=excluded_docs)
+    most_similar_docs = database.query_collection(prompt,n_chunks,excluded_docs, max_chuks_per_docs)
     
     return most_similar_docs
 
@@ -237,51 +309,62 @@ def generate_chat(prompt):
 
 
 def generate_sections(user_prompt:str):
+    st.session_state.messages.append({"role": "user", "content": user_prompt})
+
 
     section_prompt= f"""
-Analyze the documents I will provide and then create 8 sections for a scientific literature review on this theme: {user_prompt}.
-    
-    Return only the list of sections in this exact format:
-    1 - Section Name
-    2 - Section Name
-    ...
-    8 - Section Name
-    
-    Do not include any additional text or explanations.
+    Analyze the documents I will provide and then create 8 sections for a scientific literature review on this theme: {user_prompt}.
+        
+        Return only the list of sections in this exact format:
+        1 - Introduction
+        2 - Section Name
+        ...
+        8 - Conclusion
+        
+        Do not include any additional text or explanations.
 
-"""
+    """
     most_similar_docs = get_most_similar_docs(section_prompt)
-    sections_response = call_llm(most_similar_docs["documents"], section_prompt,"") #Vazio pro system prompt, pq quero que o prompt acima se sobressaia
 
+    sections_response = generate_text_llm_no_stream(most_similar_docs["documents"], section_prompt, "Do not put the <think> on the result text ") #Vazio pro system prompt, pq quero que o prompt acima se sobressaia
+        
+    print(f"Sections antes de filtrar {sections_response}")
     # Extrai as seções da resposta
     sections = [line.strip() for line in sections_response.split('\n') if line.strip()]
+    print(f"Sections {sections}")
+    with st.chat_message("user"):
+            st.markdown(user_prompt)
+    print(f"Sections antes de entrar : {sections}")
+
+   
+    with st.chat_message("assistant"):
 
     # Pega a primeira seção
-    if sections:
-        first_section = sections[0]
-        
-        # Segundo prompt para expandir a primeira seção
-        draft_prompt = f"""
-        Write a draft for a literature scientific review on {user_prompt} about the section {first_section}.
-        The draft should be:
-            - Comprehensive and detailed
-            - Well-structured with paragraphs
-            - Organize your answer into paragraphs and subsections.
-            - Based strictly on the provided context
-            - Approximately 300-500 words
+        if sections:
+            for section_theme in sections:
+                print("######")
+                print(f"Escrevendo a sessão : {section_theme}")
+                # Segundo prompt para expandir a primeira seção
+                draft_prompt = f"""
+                Write only one section for a literature scientific review on {user_prompt} about the section {section_theme}.
+                The section should be:
+                    - Comprehensive and detailed
+                    - Well-structured with paragraphs
+                    - Organize your answer into paragraphs and subsections.
+                    - Based strictly on the provided context
+                    - Maximun of 250 words
+                    
+                    Important: Base your entire response solely on the information provided in the context. Do not include any external knowledge or assumptions not present in the given text.
+                """
+                most_similar_docs_section_theme = get_most_similar_docs(draft_prompt, 15,5)
+                
+                # Chamada para gerar o draft da primeira seção
+                print(f"Documentos coletados para esse seção: {most_similar_docs_section_theme["documents"]}")
+                draft_response = generate_text_stream(most_similar_docs_section_theme["documents"], draft_prompt)
+                print(draft_response)
+                draft_response = st.write(draft_response)
+                st.session_state.messages.append({"role": "assistant", "content": draft_response})
             
-            Important: Base your entire response solely on the information provided in the context. Do not include any external knowledge or assumptions not present in the given text.
-
-        """
-        most_similar_docs_first_section = get_most_similar_docs(draft_prompt)
-        
-        # Chamada para gerar o draft da primeira seção
-        draft_response = call_llm(most_similar_docs_first_section["documents"], draft_prompt,"")
-        
-        return sections, first_section, draft_response
-    return [], "", ""
-
-
 def show_chat_interface():
     st.header("RAG Question Answer")
 
@@ -298,7 +381,7 @@ def show_chat_interface():
 
 
     with st.spinner("Generating sections and first draft..."):
-        generate_sections()
+        generate_sections(st.session_state.research_topic)
 
         initial_prompt = f"""
 Generate an outline of a review paper on the subject {st.session_state.research_topic}.
@@ -307,7 +390,7 @@ I want the review to be comprehensive and also provide details about the methods
 I will later ask you to expand the context of the sections in the outline.
 """
 
-        generate_chat(initial_prompt)
+        #generate_chat(initial_prompt)
 
 
     if prompt := st.chat_input("Ask a question related to your document"):
