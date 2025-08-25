@@ -198,34 +198,58 @@ def make_one_draft(context: str, prompt:str):
         messages = messages
     )
 
-def refine_full_article(all_sections: list[str], user_prompt: str):
-    """Envia todas as seções para a LLM revisar e tirar inconsistências"""
+def refine_full_article(all_sections: list[str], user_prompt: str,context_chunks: list[str]):
     full_text = "\n\n".join(all_sections)
 
+    # Monte os C1..Cn (ex.: strings vindas de most_similar_docs["documents"][0])
+    numbered_ctx = []
+    for i, ch in enumerate(context_chunks, start=1):
+        numbered_ctx.append(f"C{i}: {ch}")
+    context_block = "\n".join(numbered_ctx)
+
     refine_prompt = f"""
-    You are a professor in Material Science. You received multiple sections of a scientific review paper.
-    Your task is to unify them into a single coherent article.
+You are a senior scientific editor in Materials Science. You will receive:
+(1) a DRAFT review article, and
+(2) a CONTEXT = list of retrieved passages (C1...Cn) from PDF sources.
 
-    Topic: {user_prompt}
+Your job is to produce a SINGLE, coherent, fact-checked review article that uses ONLY the information supported by CONTEXT.
 
-    Sections draft:
-    {full_text}
+STRICT RULES
+- Rely strictly on CONTEXT. If a claim is not clearly supported by any Ci, either remove it or rewrite it as uncertainty and tag it [UNSUPPORTED].
+- Do not invent numbers, mechanisms, colors, or applications. No outside knowledge.
+- Enforce consistent terminology and spelling exactly as they appear MOST FREQUENTLY in CONTEXT (resolve variants; choose one canonical form and use it throughout).
+- Keep units, symbols, and acronyms consistent; define them once when first used.
+- Prefer precise, non-generic statements. Avoid marketing language.
+- Maintain logical section flow (Introduction → thematic sections → Conclusion). Merge overlaps and eliminate redundancy.
+- Do NOT include your reasoning or chain-of-thought.
 
-    Instructions:
-    - Eliminate inconsistencies and redundancies
-    - Ensure logical flow between sections
-    - Improve transitions
-    - Keep scientific tone
-    - Return only the final unified text
+OUTPUT FORMAT (exactly):
+1) Revised Article
+<<final, polished article; add in-text source tags like [C3] where claims are supported>>
+
+2) Consistency & Terminology Fixes
+- Canonical terms enforced: ...
+- Units/style rules applied: ...
+
+3) Unsupported or Removed Claims
+- <short claim> — reason; no support in Ci → [UNSUPPORTED]
+
+INPUT
+THEME: {user_prompt}
+DRAFT:
+{full_text}
+
+CONTEXT (C1...Cn):
+{context_block}
     """
 
     response = ollama.chat(
         model=st.session_state.llm_model,
         stream=False,
         messages=[
-            {"role": "system", "content": "You are an expert scientific editor."},
-            {"role": "user", "content": refine_prompt}
-        ]
+            {"role": "system", "content": "You are a scientific editor specialized in materials science."},
+            {"role": "user", "content": refine_prompt},
+        ],
     )
     return response["message"]["content"]
 
@@ -346,15 +370,20 @@ def generate_sections(user_prompt:str):
     st.session_state.sections_drafts = []
 
     section_prompt= f"""
-    Analyze the documents I will provide and then create 8 sections for a scientific literature review on this theme: {user_prompt}.
-        
-        Return only the list of sections in this exact format:
+        You are a materials science researcher preparing the **outline of a review article**.
+
+        Theme: {user_prompt}
+
+        Instructions:
+        - Create exactly 8 logical and progressive sections for a literature review on this topic.
+        - Use standard scientific review article structure: Introduction, thematic sections (3–6), and Conclusion.
+        - Section titles must be short (max 7 words), precise, and non-overlapping.
+        - Do not include explanations or extra text. Return only the list of sections in the format:
+
         1 - Introduction
-        2 - Section Name
+        2 - Section title
         ...
         8 - Conclusion
-        
-        Do not include any additional text or explanations.
 
     """
     most_similar_docs = get_most_similar_docs(section_prompt)
@@ -375,13 +404,18 @@ def generate_sections(user_prompt:str):
     # Gerar os drafts de todas as seções e salvar
     for section_theme in sections:
         draft_prompt = f"""
-        Write only one section for a literature scientific review on {user_prompt} about the section {section_theme}.
-        The section should be:
-            - Comprehensive and detailed
-            - Well-structured with paragraphs
-            - Organize your answer into paragraphs and subsections.
-            - Based strictly on the provided context
-            - Maximum of 250 words
+            You are writing a **single section** of a scientific review article.
+
+            Article theme: {user_prompt}  
+            Section: {section_theme}
+
+            Requirements:
+            - Write a well-structured, coherent section with proper scientific tone.
+            - Base the text strictly on the provided context. If the context lacks information, clearly state the limitation instead of inventing content.
+            - Maintain logical consistency with typical scientific review structure.
+            - Use precise terminology (avoid vague or generic claims).
+            - Maximum length: 250 words.
+            - Do NOT repeat information from Introduction or Conclusion unless necessary for clarity.
         """
         most_similar_docs_section_theme = get_most_similar_docs(draft_prompt, 10, 5)
 
@@ -392,7 +426,7 @@ def generate_sections(user_prompt:str):
         # salvar draft da seção
         st.session_state.sections_drafts.append(f"{section_theme}\n{draft_response}")
 
-    final_article = refine_full_article(st.session_state.sections_drafts, user_prompt)
+    final_article = refine_full_article(st.session_state.sections_drafts, user_prompt, most_similar_docs )
 
     with st.chat_message("assistant"):
         st.markdown(final_article)
